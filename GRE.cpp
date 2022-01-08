@@ -1,13 +1,15 @@
 #include "GRE.h"
 
+#define RecvBufSize 32768
+
 [[noreturn]] void GRE::receiver(HMODULE wintun) {
 	InitializeWintun(wintun); // Required due to being initialized in another file and wintun won't provide any .lib
 
 	sockaddr_in SenderAddr{};
 	int SenderAddrSize = sizeof(SenderAddr);
 
-	char RecvBuf[8192];
-	int BufLen = 8192;
+	char RecvBuf[RecvBufSize];
+	int BufLen = RecvBufSize;
 	int rBufLen;
 	el::Logger* defaultLogger = el::Loggers::getLogger("default");
 
@@ -76,7 +78,7 @@
 				Session = WintunStartSession(Adapter, WINTUN_MAX_RING_CAPACITY / 2);
 
 				if (!Session) {
-					WintunFreeAdapter(Adapter);
+					WintunCloseAdapter(Adapter);
 					LOG(FATAL) << "Could not create session";
 				}
 				LOG(INFO) << "Successfully restarted WinTun Session.";

@@ -30,6 +30,7 @@ extern GRE* gre;
 			continue;
 		}
 		i = 0;
+
 		// The full frame will be encapsulated over GRE to be sent through the tunnel
 		gre->sender(reinterpret_cast<char*>(Packet), PacketSize);
 
@@ -40,7 +41,7 @@ extern GRE* gre;
 // Will free Wintun adapter before exiting
 BOOL WINAPI exit_handler(DWORD dwCtrlType)
 {
-	WintunFreeAdapter(Adapter);
+	WintunCloseAdapter(Adapter);
 	std::cout << "Exiting..." << std::endl;
 	exit(0);
 	return FALSE;

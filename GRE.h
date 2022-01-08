@@ -9,7 +9,7 @@
 
 #define IPPROTO_GRE 47
 #define GRE_SIZE 4
-#define SEND_BUFFER 16384
+#define SEND_BUFFER 32768
 extern bool reset_adapter;
 extern WINTUN_SESSION_HANDLE Session;
 extern WINTUN_ADAPTER_HANDLE Adapter;

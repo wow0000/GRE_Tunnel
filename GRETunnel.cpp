@@ -7,6 +7,7 @@
 #include <WS2tcpip.h>
 #include <thread>
 #include <filesystem>
+#include "include/wintun.h"
 
 #include "wintun_helper.h"
 #include "GRE.h"
@@ -37,18 +38,6 @@ INITIALIZE_EASYLOGGINGPP
 int main(int argc, char* argv[])
 {
 	std::cout << "GRE Tunnel for Windows" << std::endl << std::endl;
-	if (strcmp(argv[1], "reset") == 0)
-	{
-		HMODULE MWintun = wt_LoadModule();
-		if (!InitializeWintun(MWintun)) {
-			std::cerr << "Failed to initialize WinTun: " << GetLastError() << std::endl <<
-				"Please make sure that wintun.dll exists" << std::endl;
-			return 0;
-		}
-		std::cout << "Reseting adapters" << std::endl;
-		WintunEnumAdapters(L"GRE_Tun", delete_callback, NULL);
-		return 0;
-	}
 	if (argc < 5 || argc > 7) {
 		std::cerr << "At least 2 arguments must be given" << std::endl <<
 			"Arguments: gre_tunnel.exe GRE_BIND_IP GRE_SERVER INTERFACE_IP GATEWAY_IP [CIDR (30)] [ADAPTER_NAME]" << std::endl;
@@ -104,13 +93,10 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	Adapter = WintunOpenAdapter(L"GRE_Tun", adapter_name);
+	Adapter = WintunCreateAdapter(L"GRE_Tunnel", adapter_name, NULL);
 	if (!Adapter) {
-		Adapter = WintunCreateAdapter(L"GRE_Tun", adapter_name, NULL, FALSE);
-		if (!Adapter) {
-			LOG(FATAL) << "Failed to create Wintun adapter: " << GetLastError();
-			return 0;
-		}
+		LOG(FATAL) << "Failed to create Wintun adapter: " << GetLastError();
+		return 0;
 	}
 
 	SetConsoleCtrlHandler(exit_handler, TRUE);
@@ -121,22 +107,22 @@ int main(int argc, char* argv[])
 	AddressRow.Address.Ipv4.sin_family = AF_INET;
 	inet_pton(AF_INET, bind_ip, &AddressRow.Address.Ipv4.sin_addr.S_un.S_addr);
 
-	AddressRow.OnLinkPrefixLength = 30;
+	AddressRow.OnLinkPrefixLength = cidr;
 	AddressRow.DadState = IpDadStatePreferred;
 	auto LastError = CreateUnicastIpAddressEntry(&AddressRow);
 
 	if (LastError != ERROR_SUCCESS && LastError != ERROR_OBJECT_ALREADY_EXISTS)
 	{
 		LOG(FATAL) << "Failed to assign IP: " << LastError;
-		WintunFreeAdapter(Adapter);
+		WintunCloseAdapter(Adapter);
 		return 0;
 	}
 
-	Session = WintunStartSession(Adapter, WINTUN_MAX_RING_CAPACITY / 2);
+	Session = WintunStartSession(Adapter, WINTUN_MAX_RING_CAPACITY);
 	if (!Session)
 	{
 		LOG(FATAL) << "Failed to create adapter";
-		WintunFreeAdapter(Adapter);
+		WintunCloseAdapter(Adapter);
 		return 0;
 	}
 

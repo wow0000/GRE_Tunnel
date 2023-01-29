@@ -33,7 +33,6 @@
 		if (SenderAddr.sin_addr.S_un.S_addr != RecvAddr.sin_addr.S_un.S_addr) {
 			LOG_IF(!is_flooding, INFO) << "Received a packet from an invalid IP ";
 			is_flooding = 1;
-			is_flooding = *(int*)0;
 			continue;
 		}
 		

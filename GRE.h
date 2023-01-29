@@ -24,9 +24,10 @@ public:
 		// Pre-allocate sending buffer to avoid runtime allocation
 		sendBuf = (char*)malloc(SEND_BUFFER);
 		if (sendBuf == NULL) {
-			LOG(FATAL) << "Could not allocate " << SEND_BUFFER << " bytes";
+			LOG(FATAL) << "sendBuf: Could not allocate " << SEND_BUFFER << " bytes";
 			return;
 		}
+		memcpy(sendBuf, "\0\0\x08\0", GRE_SIZE); // GRE size
 
 		// GRE Server IP address
 		RecvAddr.sin_family = AF_INET;

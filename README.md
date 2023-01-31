@@ -10,22 +10,21 @@ It does not support advanced features of GRE such as Sequences or Keys.
 * GRE packets with non-IPv4 packets will be dropped.
 * Logs are written next to the client in the *gre.log* file.
 * To prevent crashs, only the following protocols are whitelisted: TCP, UDP and ICMP (*gre.cpp:58*)
+* Logs won't be written more than 3 times.
 
 ## Setup
 
 ### First tunnel
 
 ```bash
-GRETunnel.exe [My public IP] [GRE Server] [Our IP on the tunnel] [GRE Server IP on the tunnel] (CIDR: Optional, Default: 30) (Adapter name: Optional)
-```
-
-### Reset interfaces
-
-```bash
-GRETunnel.exe reset
+GRETunnel.exe [Public interface IP] [GRE Server IP] [Our IP on the tunnel] [GRE Server IP on the tunnel] (CIDR: Optional, Default: 30) (Adapter name: Optional)
+./GRETunnel.exe 192.168.1.127 192.168.1.25 192.168.168.2 192.168.168.1 24
 ```
 
 # Testings and comparison about WireGuard
+
+## Note
+Testing data is outdated. Don't use it as a reference.
 
 ## Test setup (client)
 * Windows Server 2019 (Build 17763)

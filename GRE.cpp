@@ -19,54 +19,49 @@
 		rBufLen = recvfrom(s, RecvBuf, RecvBufSize, 0, (SOCKADDR*)&SenderAddr, &SenderAddrSize);
 		if (rBufLen == SOCKET_ERROR)
 		{
-			LOG_IF(!is_flooding, WARNING) << "Socket error: " << WSAGetLastError();
-			is_flooding = 1;
+			LOG_N_TIMES(3, WARNING) << "Socket error: " << WSAGetLastError();
 			continue;
 		}
 
-		if (rBufLen < GRE_SIZE + 20) {
-			LOG_IF(!is_flooding, INFO) << "Received malformed packet. Size: " << rBufLen;
-			is_flooding = 1;
-			continue;
-		}
-
+		// Check if the packet is the server one
 		if (SenderAddr.sin_addr.S_un.S_addr != RecvAddr.sin_addr.S_un.S_addr) {
-			LOG_IF(!is_flooding, INFO) << "Received a packet from an invalid IP ";
-			is_flooding = 1;
+			LOG_N_TIMES(3, INFO) << "Received malformed packet. Size: " << rBufLen;
 			continue;
 		}
-		
+
+		// Minimum packet length is 24
+		if (rBufLen < GRE_SIZE + 20) {
+			LOG_N_TIMES(3, INFO) << "Received malformed packet. Size: " << rBufLen;
+			continue;
+		}
+
 		// Prevent IPv6 & Bogus packets
-		if (RecvBuf[0] >> 4 != 4) {
+		if (RecvBuf[0] >> 4 != 4)
 			continue;
-		}
 
 		int iphl = ((RecvBuf[0] & 0x0f) * 32) / 8; // This take the second half of a byte then *32/8 -> length of the ip header
 		int totalSize = rBufLen - iphl - GRE_SIZE;
 		int startSize = iphl + GRE_SIZE;
+		// Check IP header length
 		if (iphl > 60 || iphl < 20) {
-			LOG_IF(!is_flooding, INFO) << "Received a packet with a invalid IPHL: " << iphl;
+			LOG_N_TIMES(3, INFO) << "Received a packet with a invalid IPHL: " << iphl;
 			continue;
 		}
 
 		// Check for a valid IPv4 GRE Header (No key/sequence support)
 		if (memcmp(RecvBuf + iphl, "\0\0\x08\0", GRE_SIZE) != 0) {
-			LOG_IF(!is_flooding, INFO) << "Received a packet with an invalid GRE Header";
-			is_flooding = 1;
+			LOG_N_TIMES(3, INFO) << "Received a packet with an invalid GRE Header";
 			continue;
 		}
 
 		// Check if the contained packet is a IPv4 one
 		if ((RecvBuf+startSize)[0] >> 4 != 4)
-		{
 			continue;
-		}
 
 		// Whitelist protocols
 		int protocol = (RecvBuf + startSize)[9];
 		if (protocol != IPPROTO_TCP && protocol != IPPROTO_ICMP && protocol != IPPROTO_UDP) {
-			LOG_IF(!is_flooding, INFO) << "Received a packet with an invalid protocol: " << protocol;
-			is_flooding = 1;
+			LOG_N_TIMES(3, INFO) << "Received a packet with an invalid protocol: " << protocol;
 			continue;
 		}
 
@@ -74,8 +69,7 @@
 		if (!OutgoingPacket)
 		{
 			DWORD lastError = GetLastError();
-			LOG_IF(!is_flooding, WARNING) << "Could not allocate enough memory to send packet " << totalSize << " : " << lastError;
-			is_flooding = 1;
+			LOG_EVERY_N(100, WARNING) << "Could not allocate enough memory to send packet " << totalSize << " : " << lastError;
 
 			// Looks like we can't receive any more packets so we are going to restart the driver's session
 			if (lastError == ERROR_HANDLE_EOF) {
@@ -95,7 +89,6 @@
 			}
 			continue;
 		}
-		is_flooding = 0;
 		memcpy(OutgoingPacket, (RecvBuf + startSize), totalSize);
 		WintunSendPacket(Session, OutgoingPacket);
 	}

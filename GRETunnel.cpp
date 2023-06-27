@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	Adapter = WintunCreateAdapter(L"GRE_Tunnel", adapter_name, NULL);
+	Adapter = WintunCreateAdapter(adapter_name, L"GRE_Tunnel", NULL);
 	if (!Adapter) {
 		LOG(FATAL) << "Failed to create Wintun adapter: " << GetLastError();
 		return 0;

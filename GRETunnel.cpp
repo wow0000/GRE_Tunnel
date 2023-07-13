@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
 	else
 		cidr = 30;
 
-	if (argc == 7)
+	if (argc >= 7)
 	{
 		adapter_name = GetWC(argv[6]);
 		_adapter_name = argv[6];
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 		_adapter_name = "GRE_Tunnel";
 	}
 
-	if (argc == 8)
+	if (argc >= 8)
 	{
 		additional_ip = argv[7];
 	}
